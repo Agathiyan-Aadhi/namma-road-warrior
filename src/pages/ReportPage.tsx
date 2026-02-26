@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
+import { addComplaint } from "@/lib/complaintStore";
 
 const severityOptions = ["Low", "Medium", "High", "Critical"];
 const districts = ["Chennai", "Coimbatore", "Madurai", "Salem", "Tiruchirappalli", "Tirunelveli", "Erode", "Vellore"];
@@ -30,10 +31,17 @@ const ReportPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.description || !form.district || !form.severity) {
+    if (!form.description || !form.district || !form.severity || !form.address) {
       toast({ title: "Error", description: "Please fill all required fields", variant: "destructive" });
       return;
     }
+    addComplaint({
+      location: form.address,
+      district: form.district,
+      severity: form.severity,
+      description: form.description,
+      image: imagePreview || undefined,
+    });
     toast({ title: "Complaint Submitted! 🎉", description: "Your pothole report has been sent to the respective councillor." });
     navigate("/dashboard");
   };

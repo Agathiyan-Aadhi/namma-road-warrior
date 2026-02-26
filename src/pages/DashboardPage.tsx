@@ -1,15 +1,10 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MapPin, AlertTriangle, CheckCircle, Clock, Trophy, TrendingUp, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
-
-const mockComplaints = [
-  { id: 1, location: "Anna Nagar 2nd Street", district: "Chennai", status: "pending", date: "2026-02-25", severity: "High" },
-  { id: 2, location: "Gandhipuram Main Road", district: "Coimbatore", status: "in_progress", date: "2026-02-23", severity: "Medium" },
-  { id: 3, location: "KK Nagar 5th Cross", district: "Madurai", status: "completed", date: "2026-02-20", severity: "Low" },
-  { id: 4, location: "Sathyamangalam Road", district: "Erode", status: "completed", date: "2026-02-18", severity: "High" },
-];
+import { getComplaints, type Complaint } from "@/lib/complaintStore";
 
 const statusConfig = {
   pending: { label: "Pending", color: "bg-warning/15 text-warning", icon: Clock },
@@ -19,7 +14,14 @@ const statusConfig = {
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
 
+  useEffect(() => {
+    setComplaints(getComplaints());
+  }, []);
+
+  const pending = complaints.filter((c) => c.status === "pending").length;
+  const completed = complaints.filter((c) => c.status === "completed").length;
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -32,10 +34,10 @@ const DashboardPage = () => {
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Total Reports", value: "12", icon: AlertTriangle, color: "text-primary" },
-            { label: "Pending", value: "3", icon: Clock, color: "text-warning" },
-            { label: "Repaired", value: "8", icon: CheckCircle, color: "text-success" },
-            { label: "Reward Points", value: "450", icon: Trophy, color: "text-accent" },
+            { label: "Total Reports", value: String(complaints.length), icon: AlertTriangle, color: "text-primary" },
+            { label: "Pending", value: String(pending), icon: Clock, color: "text-warning" },
+            { label: "Repaired", value: String(completed), icon: CheckCircle, color: "text-success" },
+            { label: "Reward Points", value: String(completed * 50), icon: Trophy, color: "text-accent" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -79,7 +81,9 @@ const DashboardPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockComplaints.map((c) => {
+                  {complaints.length === 0 ? (
+                    <tr><td colSpan={5} className="px-5 py-8 text-center text-muted-foreground">No complaints yet. Report a pothole to get started!</td></tr>
+                  ) : complaints.map((c) => {
                     const s = statusConfig[c.status as keyof typeof statusConfig];
                     return (
                       <tr key={c.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
@@ -87,7 +91,7 @@ const DashboardPage = () => {
                         <td className="px-5 py-4 text-muted-foreground">{c.district}</td>
                         <td className="px-5 py-4">
                           <span className={`text-xs px-2 py-1 rounded-full ${
-                            c.severity === "High" ? "bg-destructive/15 text-destructive" :
+                            c.severity === "High" || c.severity === "Critical" ? "bg-destructive/15 text-destructive" :
                             c.severity === "Medium" ? "bg-warning/15 text-warning" :
                             "bg-muted text-muted-foreground"
                           }`}>{c.severity}</span>

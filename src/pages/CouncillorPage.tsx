@@ -1,16 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MapPin, CheckCircle, Clock, AlertTriangle, Eye, LogOut, Menu, X, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-const mockComplaints = [
-  { id: 1, user: "Priya Sharma", location: "Anna Nagar 2nd Street", district: "Chennai", severity: "High", status: "pending", date: "2026-02-25", description: "Large pothole near school zone, 2ft wide" },
-  { id: 2, user: "Rajesh Kumar", location: "Gandhipuram Main Road", district: "Coimbatore", severity: "Critical", status: "pending", date: "2026-02-24", description: "Deep pothole causing accidents" },
-  { id: 3, user: "Anitha Devi", location: "KK Nagar 5th Cross", district: "Madurai", severity: "Medium", status: "in_progress", date: "2026-02-23", description: "Multiple small potholes" },
-  { id: 4, user: "Karthik Rajan", location: "Sathy Road Junction", district: "Erode", severity: "Low", status: "completed", date: "2026-02-20", description: "Minor road damage after rain" },
-];
+import { getComplaints, updateComplaintStatus, type Complaint } from "@/lib/complaintStore";
 
 const statusConfig = {
   pending: { label: "Pending", color: "bg-warning/15 text-warning" },
@@ -21,20 +15,22 @@ const statusConfig = {
 const CouncillorPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [complaints, setComplaints] = useState(mockComplaints);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
+  useEffect(() => {
+    setComplaints(getComplaints());
+  }, []);
+
   const handleMarkComplete = (id: number) => {
-    setComplaints((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status: "completed" } : c))
-    );
+    const updated = updateComplaintStatus(id, "completed");
+    setComplaints(updated);
     toast({ title: "Repair Completed! ✅", description: "Reward points have been credited to the complainant." });
   };
 
   const handleStartRepair = (id: number) => {
-    setComplaints((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status: "in_progress" } : c))
-    );
+    const updated = updateComplaintStatus(id, "in_progress");
+    setComplaints(updated);
     toast({ title: "Repair Started", description: "Status updated to In Progress." });
   };
 
@@ -101,7 +97,9 @@ const CouncillorPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {complaints.map((c) => {
+                  {complaints.length === 0 ? (
+                    <tr><td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">No complaints submitted yet.</td></tr>
+                  ) : complaints.map((c) => {
                     const s = statusConfig[c.status as keyof typeof statusConfig];
                     return (
                       <tr key={c.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
